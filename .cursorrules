@@ -1,0 +1,20 @@
+涉及到Deepseek API 调用时，请参考以下文档
+## Deepseek API 配置
+- API文档：https://api-docs.deepseek.com/zh-cn/quick_start/parameter_settings
+- API地址：https://api.deepseek.com
+- API密钥：sk-18f2aff8055d423d8402df8a29237648
+
+### 1. API文档索引
+1. 基础API
+   - 对话补全: https://api-docs.deepseek.com/zh-cn/api/create-chat-completion
+   - 文本补全: https://api-docs.deepseek.com/zh-cn/api/create-completion
+   - 模型列表: https://api-docs.deepseek.com/zh-cn/api/list-models
+
+2. 功能指南
+   - 多轮对话: https://api-docs.deepseek.com/zh-cn/guides/multi_round_chat
+   - 对话前缀续写: https://api-docs.deepseek.com/zh-cn/guides/chat_prefix_completion
+   - FIM补全: https://api-docs.deepseek.com/zh-cn/guides/fim_completion
+   - JSON输出: https://api-docs.deepseek.com/zh-cn/guides/json_mode
+   - Function Calling: https://api-docs.deepseek.com/zh-cn/guides/function_calling
+   - 硬盘缓存: https://api-docs.deepseek.com/zh-cn/guides/kv_cache
+   - 提示词库: https://api-docs.deepseek.com/zh-cn/prompt-library/
