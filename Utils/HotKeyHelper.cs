@@ -36,7 +36,6 @@ namespace AIAssistant.Utils
                 bool showKeyRegistered = RegisterHotKey(handle, HOTKEY_ID_SHOW, MOD_ALT, 0x51); // 0x51 是 Q 键的虚拟键码
                 if (!showKeyRegistered)
                 {
-                    MessageBox.Show("注册 Alt + Q 热键失败！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                     return false;
                 }
 
@@ -44,17 +43,14 @@ namespace AIAssistant.Utils
                 bool hideKeyRegistered = RegisterHotKey(handle, HOTKEY_ID_HIDE, 0, 0x1B); // 0x1B 是 Esc 键的虚拟键码
                 if (!hideKeyRegistered)
                 {
-                    MessageBox.Show("注册 Esc 热键失败！", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                     UnregisterHotKey(handle, HOTKEY_ID_SHOW); // 清理已注册的热键
                     return false;
                 }
 
-                MessageBox.Show("热键注册成功！\nAlt + Q: 显示窗口\nEsc: 隐藏窗口", "提示", MessageBoxButton.OK, MessageBoxImage.Information);
                 return true;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                MessageBox.Show($"注册热键时发生错误：{ex.Message}", "错误", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }

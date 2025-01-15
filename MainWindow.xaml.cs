@@ -106,6 +106,9 @@ namespace AIAssistant
                 Text = "AI Assistant (Alt + Q: 显示, Esc: 隐藏)"
             };
 
+            // 添加双击事件处理
+            _notifyIcon.DoubleClick += (s, e) => ShowAndActivate();
+
             // 创建右键菜单
             var contextMenu = new ContextMenuStrip();
             contextMenu.Items.Add("显示 (Alt + Q)", null, ShowWindow);

@@ -14,11 +14,12 @@ namespace AIAssistant.Services
         private readonly HttpClient _httpClient;
         private readonly AppLauncherService _appLauncher;
         private readonly FileOperationService _fileOperation;
+        private readonly SystemCommandService _systemCommand;
         private const string API_KEY = "sk-18f2aff8055d423d8402df8a29237648";
         private const string API_URL = "https://api.deepseek.com/v1/chat/completions";
 
         // 系统提示词，用于指导AI理解和处理用户请求
-        private const string SYSTEM_PROMPT = @"你是一个智能助手，专门帮助用户处理文件操作和应用程序启动的请求。
+        private const string SYSTEM_PROMPT = @"你是一个智能助手，专门帮助用户处理文件操作、应用程序启动和系统命令的请求。
 请分析用户的自然语言输入，理解他们的意图，并返回结构化的操作指令。
 
 你需要将用户的请求解析为以下几种操作类型之一：
@@ -29,7 +30,48 @@ namespace AIAssistant.Services
 5. ANALYZE_FILE - 分析文件
 6. EXECUTE_BAT - 执行批处理文件
 7. LAUNCH_APP - 启动应用程序
-8. UNKNOWN - 无法理解的请求
+8. SYSTEM_COMMAND - 执行系统命令
+9. UNKNOWN - 无法理解的请求
+
+关于系统命令的说明：
+- 支持以下系统命令类型：
+  1. 关机/重启：如'关机'、'重启'、'1小时后关机'等
+     - command: shutdown/restart
+     - delay: 延迟时间（秒）
+  2. 休眠/睡眠：如'休眠'、'睡眠'等
+     - command: hibernate/sleep
+  3. 锁定/注销：如'锁定电脑'、'注销'等
+     - command: lock/logoff
+  4. 音量控制：如'调高音量'、'静音'、'调低音量'等
+     - command: volumeup/volumedown/mute
+  5. 系统信息：如'查看系统信息'、'查看进程'等
+     - command: systeminfo/processlist
+  6. 系统维护：如'清理系统'、'刷新DNS'、'清空回收站'等
+     - command: cleansystem/flushdns/cleanrecyclebin
+  7. 进程管理：如'结束进程 xxx'等
+     - command: killprocess
+     - processName: 进程名称
+  8. 窗口管理：如'显示桌面'、'最小化所有窗口'、'还原所有窗口'等
+     - command: showdesktop/minimizeall/restoreall
+
+- 返回格式示例：
+{
+    ""operation"": ""SYSTEM_COMMAND"",
+    ""params"": {
+        ""command"": ""Shutdown"",
+        ""delay"": ""3600""
+    },
+    ""explanation"": ""1小时后关机""
+}
+
+或者：
+{
+    ""operation"": ""SYSTEM_COMMAND"",
+    ""params"": {
+        ""command"": ""cleanrecyclebin""
+    },
+    ""explanation"": ""清空回收站""
+}
 
 关于应用程序启动的说明：
 - 当用户说'打开xxx'、'启动xxx'、'运行xxx'时，应该理解为启动应用程序
@@ -120,6 +162,7 @@ namespace AIAssistant.Services
             _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {API_KEY}");
             _appLauncher = new AppLauncherService();
             _fileOperation = new FileOperationService();
+            _systemCommand = new SystemCommandService();
         }
 
         public async Task<string> GetResponseAsync(string userInput, List<Dictionary<string, string>> history = null)
@@ -382,6 +425,81 @@ namespace AIAssistant.Services
                         return $"{message}\n{explanation}";
                     }
                     return $"启动应用程序失败: {message}\n{explanation}";
+
+                case "SYSTEM_COMMAND":
+                    try
+                    {
+                        var command = parameters.GetProperty("command").GetString().ToLower();
+                        
+                        switch (command)
+                        {
+                            case "shutdown":
+                                var delay = parameters.TryGetProperty("delay", out var delayValue) ? delayValue.GetString() : "0";
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.Shutdown, delay);
+                                
+                            case "restart":
+                                var restartDelay = parameters.TryGetProperty("delay", out var restartDelayValue) ? restartDelayValue.GetString() : "0";
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.Restart, restartDelay);
+                                
+                            case "sleep":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.Sleep);
+                                
+                            case "hibernate":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.Hibernate);
+                                
+                            case "lock":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.Lock);
+                                
+                            case "logoff":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.LogOff);
+                                
+                            case "volumeup":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.VolumeUp);
+                                
+                            case "volumedown":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.VolumeDown);
+                                
+                            case "volumemute":
+                            case "mute":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.VolumeMute);
+                                
+                            case "showdesktop":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.ShowDesktop);
+                                
+                            case "minimizeall":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.MinimizeAll);
+                                
+                            case "restoreall":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.RestoreAll);
+                                
+                            case "cleanrecyclebin":
+                            case "emptyrecyclebin":
+                                return await _systemCommand.ExecuteCommandAsync(SystemCommandService.CommandType.EmptyRecycleBin);
+                                
+                            case "systeminfo":
+                                return await _systemCommand.GetSystemInfoAsync();
+                                
+                            case "processlist":
+                                return await _systemCommand.GetProcessListAsync();
+                                
+                            case "killprocess":
+                                var processName = parameters.GetProperty("processName").GetString();
+                                return await _systemCommand.KillProcessAsync(processName);
+                                
+                            case "cleansystem":
+                                return await _systemCommand.CleanSystemAsync();
+                                
+                            case "flushdns":
+                                return await _systemCommand.FlushDnsAsync();
+                                
+                            default:
+                                throw new ArgumentException($"未知的系统命令: {command}");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return $"执行系统命令失败: {ex.Message}";
+                    }
 
                 case "UNKNOWN":
                 default:
